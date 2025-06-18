@@ -52,7 +52,15 @@ services:
       start_period: 15s
     networks:
       - blueprint
-
+  centrifugo:
+    image: centrifugo/centrifugo:v5
+    container_name: centrifugo
+    command: centrifugo -c /centrifugo/config.json
+    volumes:
+      - ./centrifugo:/centrifugo
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
 volumes:
   psql_volume_bp:
 networks:

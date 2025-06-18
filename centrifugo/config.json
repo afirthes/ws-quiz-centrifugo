@@ -1,0 +1,10 @@
+{
+  "token_hmac_secret_key": "a-string-secret-at-least-256-bits-long",
+  "admin": true,
+  "allowed_origins": ["*"],
+  "websocket_compression": true,
+  "presence": true,
+  "join_leave": true,
+  "history_size": 10,
+  "history_ttl": "300s"
+}
