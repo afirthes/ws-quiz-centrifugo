@@ -1,4 +1,4 @@
-# Project ws-quiz-centrifugo
+# Project github.com/afirthes/ws-quiz-centrifugo
 
 One Paragraph of project description goes here
 

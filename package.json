@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "dev:frontend": "cd frontend && vite",
+    "dev:backend": "air",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+  }
+}
