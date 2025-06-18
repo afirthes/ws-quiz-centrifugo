@@ -48,7 +48,7 @@ export const useCentrifugo = () => {
                 dispatch(setStatus('disconnected'))
             });
 
-            const sub = centrifuge.newSubscription('chat', {
+                const sub = centrifuge.newSubscription('chat', {
                 token: subscriptionToken,
             });
 

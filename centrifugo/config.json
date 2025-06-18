@@ -1,4 +1,5 @@
 {
+  "grpc_api": true,
   "token_hmac_secret_key": "a-string-secret-at-least-256-bits-long",
   "admin": true,
   "allowed_origins": ["*"],
@@ -6,5 +7,13 @@
   "presence": true,
   "join_leave": true,
   "history_size": 10,
-  "history_ttl": "300s"
+  "history_ttl": "300s",
+  "allow_subscribe_for_client": true,
+  "allow_subscribe_for_anonymous": true,
+  "allow_publish_for_subscriber": true,
+  "allow_publish_for_anonymous": true,
+  "allow_history_for_subscriber": true,
+  "allow_history_for_anonymous": true,
+  "allow_presence_for_subscriber": true,
+  "allow_presence_for_anonymous": true
 }

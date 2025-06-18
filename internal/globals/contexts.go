@@ -12,4 +12,6 @@ const (
 	ValidatorContext
 	// UserContext represents a user struct
 	UserContext
+	// Centrifuge connection
+	CentrifugeClient
 )
