@@ -4,6 +4,9 @@ import (
 	"context"
 	"github.com/afirthes/ws-quiz-centrifugo/internal/globals"
 	"github.com/afirthes/ws-quiz-centrifugo/internal/middleware"
+	"github.com/afirthes/ws-quiz-centrifugo/internal/models"
+	"github.com/dgraph-io/badger"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
 	"os"
@@ -20,7 +23,14 @@ func StartServer() {
 	db := GetDatabase(&DatabaseOptions{
 		Path: "data.db",
 	})
-	defer db.Close()
+	defer func(db *badger.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Fatalf("Error closing db %v", err)
+		}
+	}(db)
+
+	createDummyUser(db)
 
 	sessionManager := GetSessionManager(db, &SessionManagerOptions{
 		StorePrefix: "session:",
@@ -86,4 +96,23 @@ func StartServer() {
 	<-done
 	logger.Println("Server stopped")
 	// #endregion Graceful shutdown with [ctrl] + [c]
+}
+
+func createDummyUser(db *badger.DB) {
+	hash, err := bcrypt.GenerateFromPassword([]byte("123123"), 12)
+	if err != nil {
+		panic("")
+	}
+
+	user := &models.User{
+		Email:    "a@a.a",
+		Password: string(hash),
+	}
+
+	err = user.Save(db)
+	if err != nil {
+		panic("")
+		return
+	}
+
 }

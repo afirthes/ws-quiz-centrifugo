@@ -3,7 +3,6 @@ package server
 import (
 	"github.com/afirthes/ws-quiz-centrifugo/internal/handlers"
 	"github.com/afirthes/ws-quiz-centrifugo/internal/middleware"
-
 	"github.com/go-chi/chi"
 )
 
@@ -22,5 +21,6 @@ func setupRoutes(app *chi.Mux) {
 		app.Post("/signin", handlers.SigninHandler())
 		app.With(middleware.Authenticate()).
 			Post("/signout", handlers.SignoutHandler())
+		app.Get("/me", handlers.Me())
 	})
 }
