@@ -8,12 +8,17 @@ export default function CentrifugoConnectPage() {
     const [userId, setUserId] = useState("");
     const [channel, setChannel] = useState("");
     const [connectionId, setConnectionId] = useState("");
-    const [quizQuestion, setQuizQuestion] = useState<{ q: string; a: string[] } | null>(null);
+    const centrifuge = useCentrifugoStore.getState().connections[connectionId]?.centrifuge;
+    const channelName = useCentrifugoStore.getState().connections[connectionId]?.channel;
 
     // ✅ Подписка напрямую на статус по connectionId
     const status = useCentrifugoStore((state) =>
         connectionId ? state.connections[connectionId]?.status ?? "disconnected" : "disconnected"
     );
+
+    const quizQuestion = useCentrifugoStore((s) => s.currentQuestion);
+
+    const usersAnswered = useCentrifugoStore((s) => s.usersAnswered);
 
     const handleConnect = async () => {
         if (!userId || !channel) return;
@@ -22,15 +27,6 @@ export default function CentrifugoConnectPage() {
         setConnectionId(id);
 
         await connect(id, userId, channel);
-
-        const conn = useCentrifugoStore.getState().connections[id];
-        if (conn) {
-          conn.subscription.on('publication', (ctx) => {
-            if (ctx.data?.action === "NEXT_QUESTION") {
-              setQuizQuestion(ctx.data.data);
-            }
-          });
-        }
     };
 
     const handleDisconnect = () => {
@@ -42,10 +38,6 @@ export default function CentrifugoConnectPage() {
 
     const handleStartQuiz = () => {
       if (!connectionId) return;
-
-      const centrifuge = useCentrifugoStore.getState().connections[connectionId]?.centrifuge;
-      const channelName = useCentrifugoStore.getState().connections[connectionId]?.channel;
-
       if (!centrifuge || !channelName) return;
 
       centrifuge.publish(channelName, {
@@ -148,6 +140,18 @@ export default function CentrifugoConnectPage() {
                               className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 hover:bg-blue-100 cursor-pointer transition"
                             >
                               {answer}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {usersAnswered.length > 0 && (
+                      <div className="pt-4 border-t mt-4">
+                        <h3 className="text-lg font-semibold mb-2">Ответившие участники:</h3>
+                        <ul className="space-y-1">
+                          {usersAnswered.map((user, idx) => (
+                            <li key={idx} className="text-gray-800">
+                              {user}
                             </li>
                           ))}
                         </ul>

@@ -27,6 +27,8 @@ type Message = {
 
 type Status = 'disconnected' | 'connecting' | 'connected';
 
+type QuizQuestion = { q: string; a: string[] };
+
 type ConnectionData = {
   centrifuge: Centrifuge;
   subscription: Subscription;
@@ -34,7 +36,6 @@ type ConnectionData = {
   messages: Message[];
   channel: string;
   userId: string;
-  answers?: { user: string; answer: number }[];
 };
 
 type TokenInfo = {
@@ -47,6 +48,8 @@ type TokenInfo = {
 type CentrifugoStore = {
   connections: Record<string, ConnectionData>;
   tokens: Record<string, TokenInfo>;
+  currentQuestion?: QuizQuestion;
+  usersAnswered: string[];
 
   connect: (connectionId: string, userId: string, channel: string) => Promise<void>;
   disconnect: (connectionId: string) => void;
@@ -59,6 +62,7 @@ type CentrifugoStore = {
 export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
   connections: {},
   tokens: {},
+  usersAnswered: [],
 
   connect: async (connectionId, userId, channel) => {
     const { connections } = get();
@@ -98,20 +102,23 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
       if (ctx.data?.action === "ANSWER") {
         flushSync(() => {
           set((state) => {
-            const prev = state.connections[connectionId];
-            if (!prev) return state;
-            const newAnswers = prev.answers ? [...prev.answers, { user: ctx.data.user, answer: ctx.data.answer }] : [{ user: ctx.data.user, answer: ctx.data.answer }];
+            const existing = state.usersAnswered ?? [];
+            const updated = Array.from(new Set([...existing, ctx.data.user]));
+            console.log("Ответившие пользователи:", updated);
             return {
-              connections: {
-                ...state.connections,
-                [connectionId]: {
-                  ...prev,
-                  answers: newAnswers,
-                },
-              },
+              usersAnswered: updated,
             };
           });
         });
+      } else if (ctx.data?.action === "NEXT_QUESTION") {
+        flushSync(() => {
+          set((state) => ({
+            currentQuestion: ctx.data.data,
+            usersAnswered: [],
+          }));
+        });
+        console.log("Получен новый вопрос:", ctx.data.data);
+        return;
       } else {
         const message = ctx.data as Message;
         flushSync(() => {
@@ -206,7 +213,7 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
             messages: [],
             channel,
             userId,
-            answers: [],
+            // answers поле больше не используется внутри connections
           },
         },
       }));
