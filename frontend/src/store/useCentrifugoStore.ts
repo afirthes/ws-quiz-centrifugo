@@ -34,6 +34,7 @@ type ConnectionData = {
   messages: Message[];
   channel: string;
   userId: string;
+  answers?: { user: string; answer: number }[];
 };
 
 type TokenInfo = {
@@ -93,22 +94,42 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
     });
 
     sub.on('publication', (ctx) => {
-      const message = ctx.data as Message;
-      flushSync(() => {
-        set((state) => {
-          const prev = state.connections[connectionId];
-          if (!prev) return state;
-          return {
-            connections: {
-              ...state.connections,
-              [connectionId]: {
-                ...prev,
-                messages: [...prev.messages, message],
+      console.log("Получено сообщение:", ctx.data);
+      if (ctx.data?.action === "ANSWER") {
+        flushSync(() => {
+          set((state) => {
+            const prev = state.connections[connectionId];
+            if (!prev) return state;
+            const newAnswers = prev.answers ? [...prev.answers, { user: ctx.data.user, answer: ctx.data.answer }] : [{ user: ctx.data.user, answer: ctx.data.answer }];
+            return {
+              connections: {
+                ...state.connections,
+                [connectionId]: {
+                  ...prev,
+                  answers: newAnswers,
+                },
               },
-            },
-          };
+            };
+          });
         });
-      });
+      } else {
+        const message = ctx.data as Message;
+        flushSync(() => {
+          set((state) => {
+            const prev = state.connections[connectionId];
+            if (!prev) return state;
+            return {
+              connections: {
+                ...state.connections,
+                [connectionId]: {
+                  ...prev,
+                  messages: [...prev.messages, message],
+                },
+              },
+            };
+          });
+        });
+      }
     });
 
     centrifuge.on('connecting', () => {
@@ -168,6 +189,12 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
     sub.subscribe();
     centrifuge.connect();
 
+    // Отправка сообщения о подключении
+    centrifuge.publish(channel, {
+      action: "connected",
+      user: userId,
+    });
+
     flushSync(() => {
       set((state) => ({
         connections: {
@@ -179,6 +206,7 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
             messages: [],
             channel,
             userId,
+            answers: [],
           },
         },
       }));
