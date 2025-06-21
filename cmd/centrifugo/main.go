@@ -1,4 +1,4 @@
-package main
+package centrifugo
 
 import (
 	"bufio"
@@ -113,10 +113,10 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	sub, err := client.NewSubscription("chat:", centrifuge.SubscriptionConfig{
+	sub, err := client.NewSubscription("quiz123", centrifuge.SubscriptionConfig{
 		Recoverable: true,
 		JoinLeave:   true,
-		Token:       connToken("49", 0, "chat"),
+		Token:       connToken("49", 0, "quiz123"),
 	})
 	if err != nil {
 		log.Fatalln(err)

@@ -267,7 +267,7 @@ func StartServer() {
 	// #endregion Setup server
 
 	// Start Centrifuge publisher
-	go startCentrifuge()
+	//go startCentrifuge()
 
 	// #region Graceful shutdown with [ctrl] + [c]
 	done := make(chan bool, 1)

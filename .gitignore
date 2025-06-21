@@ -35,3 +35,5 @@ main
 data.db
 __debug_bin
 
+/node_modules/.vite/deps/_metadata.json
+/node_modules/.vite/deps/package.json
