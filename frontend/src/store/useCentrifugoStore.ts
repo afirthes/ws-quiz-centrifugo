@@ -52,7 +52,7 @@ type CentrifugoStore = {
   usersAnswered: string[];
   currentQuiz?: string;
   currentUser?: string;
-  connectedUsers: Record<string, string[]>;
+  connectedUsers: string[];
   setCurrentUser: (userId: string) => void;
 
   connect: (connectionId: string, userId: string, channel: string) => Promise<void>;
@@ -69,7 +69,7 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
   tokens: {},
   usersAnswered: [],
   currentUser: undefined,
-  connectedUsers: {},
+  connectedUsers: [],
 
   connect: async (connectionId, userId, channel) => {
     const { connections } = get();
@@ -129,15 +129,10 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
       } else if (ctx.data?.action === "CONNECTED") {
         flushSync(() => {
           set((state) => {
-            const channel = state.tokens[connectionId]?.channel;
-            if (!channel) return state;
-            const prev = state.connectedUsers[channel] ?? [];
+            const prev = state.connectedUsers ?? [];
             const updated = Array.from(new Set([...prev, ctx.data.user]));
             return {
-              connectedUsers: {
-                ...state.connectedUsers,
-                [channel]: updated,
-              },
+              connectedUsers: updated,
             };
           });
         });
@@ -218,6 +213,8 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
 
     sub.subscribe();
     centrifuge.connect();
+
+    console.log("Called!")
 
     // Отправка сообщения о подключении
     centrifuge.publish(channel, {

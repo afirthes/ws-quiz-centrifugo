@@ -11,6 +11,7 @@ export default function QuizPage() {
     const [copied, setCopied] = useState(false);
 
     useEffect(() => {
+        console.log("Called 2")
         if (currentQuizId && userId) {
             connect(currentQuizId, userId, `quiz#${currentQuizId}`);
         }
@@ -20,7 +21,7 @@ export default function QuizPage() {
         currentQuizId && userId ? s.getStatus(currentQuizId) : undefined
     );
 
-    const connectedUsers = useCentrifugoStore((s) => s.connectedUsers[`quiz#${currentQuizId}`] || []);
+    const connectedUsers = useCentrifugoStore((s) => s.connectedUsers);
 
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col relative">
