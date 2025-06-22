@@ -50,6 +50,10 @@ type CentrifugoStore = {
   tokens: Record<string, TokenInfo>;
   currentQuestion?: QuizQuestion;
   usersAnswered: string[];
+  currentQuiz?: string;
+  currentUser?: string;
+  connectedUsers: Record<string, string[]>;
+  setCurrentUser: (userId: string) => void;
 
   connect: (connectionId: string, userId: string, channel: string) => Promise<void>;
   disconnect: (connectionId: string) => void;
@@ -57,12 +61,15 @@ type CentrifugoStore = {
 
   getStatus: (connectionId: string) => Status | undefined;
   getMessages: (connectionId: string) => Message[];
+  setCurrentQuiz: (quizId: string) => void;
 };
 
 export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
   connections: {},
   tokens: {},
   usersAnswered: [],
+  currentUser: undefined,
+  connectedUsers: {},
 
   connect: async (connectionId, userId, channel) => {
     const { connections } = get();
@@ -112,12 +119,28 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
         });
       } else if (ctx.data?.action === "NEXT_QUESTION") {
         flushSync(() => {
-          set((state) => ({
+          set(() => ({
             currentQuestion: ctx.data.data,
             usersAnswered: [],
           }));
         });
         console.log("Получен новый вопрос:", ctx.data.data);
+        return;
+      } else if (ctx.data?.action === "CONNECTED") {
+        flushSync(() => {
+          set((state) => {
+            const channel = state.tokens[connectionId]?.channel;
+            if (!channel) return state;
+            const prev = state.connectedUsers[channel] ?? [];
+            const updated = Array.from(new Set([...prev, ctx.data.user]));
+            return {
+              connectedUsers: {
+                ...state.connectedUsers,
+                [channel]: updated,
+              },
+            };
+          });
+        });
         return;
       } else {
         const message = ctx.data as Message;
@@ -198,7 +221,7 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
 
     // Отправка сообщения о подключении
     centrifuge.publish(channel, {
-      action: "connected",
+      action: "CONNECTED",
       user: userId,
     });
 
@@ -262,4 +285,16 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
 
   getStatus: (connectionId) => get().connections[connectionId]?.status,
   getMessages: (connectionId) => get().connections[connectionId]?.messages ?? [],
+
+  setCurrentQuiz: (quizId) => {
+    flushSync(() => {
+      set({ currentQuiz: quizId });
+    });
+  },
+
+  setCurrentUser: (userId) => {
+    flushSync(() => {
+      set({ currentUser: userId });
+    });
+  },
 }));

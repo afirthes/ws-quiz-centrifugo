@@ -9,6 +9,8 @@ import Signup from "./pages/Signup"
 import Dashboard from "./pages/Dashboard"
 import PrivateRoutes from "./component/PrivateRoutes.tsx"
 import CentrifugoConnectPage from "./pages/ParticipantPage.tsx";
+import QuizListPage from "./pages/QuizListPage.tsx";
+import QuizPage from "./pages/QuizPage.tsx";
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
 
         <Route element={<PrivateRoutes />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/list" element={<QuizListPage />} />
+          <Route path="/quiz" element={<QuizPage />} />
         </Route>
       </Routes>
     </Router>

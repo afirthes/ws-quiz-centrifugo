@@ -23,4 +23,8 @@ func setupRoutes(app *chi.Mux) {
 			Post("/signout", handlers.SignoutHandler())
 		app.Get("/me", handlers.Me())
 	})
+
+	app.Route("/api/quiz", func(app chi.Router) {
+		app.Get("/list", handlers.QuizListHandler())
+	})
 }

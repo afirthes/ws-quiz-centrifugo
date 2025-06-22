@@ -8,6 +8,7 @@ require (
 	github.com/dgraph-io/badger v1.6.2
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/google/uuid v1.6.0
 	golang.org/x/crypto v0.12.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
 )

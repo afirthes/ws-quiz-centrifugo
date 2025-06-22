@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCentrifugoStore } from "../store/useCentrifugoStore";
 import { signin } from "../auth";
 import { useNavigate } from "react-router-dom";
 
@@ -6,11 +7,13 @@ export default function Login() {
     const [email, setEmail] = useState("a@a.a");
     const [password, setPassword] = useState("123123");
     const navigate = useNavigate();
+    const setCurrentUser = useCentrifugoStore((state) => state.setCurrentUser);
 
     const handleLogin = async () => {
         const success = await signin(email, password);
         if (success) {
-            navigate("/dashboard");
+            setCurrentUser(email);
+            navigate("/list");
         } else {
             alert("Login failed");
         }

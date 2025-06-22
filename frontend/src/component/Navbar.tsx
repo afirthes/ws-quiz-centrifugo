@@ -1,5 +1,6 @@
 import { signout } from "../auth";
 import { useNavigate } from "react-router-dom";
+import { useCentrifugoStore } from "../store/useCentrifugoStore";
 
 interface NavbarProps {
     userEmail: string;
@@ -8,9 +9,12 @@ interface NavbarProps {
 export default function Navbar({ userEmail }: NavbarProps) {
     const navigate = useNavigate();
 
+    const setCurrentUser = useCentrifugoStore((state) => state.setCurrentUser);
+
     const handleLogout = async () => {
         const success = await signout();
         if (success) {
+            setCurrentUser("");
             navigate("/login");
         }
     };

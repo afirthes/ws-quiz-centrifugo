@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-const exampleTokenHmacSecret = "a-string-secret-at-least-256-bits-long"
+const secret = "a-string-secret-at-least-256-bits-long"
 
 func connToken(user string, exp int64, chat string) string {
 	if exp == 0 {
@@ -37,7 +37,7 @@ func connToken(user string, exp int64, chat string) string {
 		claims["channel"] = chat
 	}
 
-	t, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(exampleTokenHmacSecret))
+	t, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(secret))
 	if err != nil {
 		panic(err)
 	}
