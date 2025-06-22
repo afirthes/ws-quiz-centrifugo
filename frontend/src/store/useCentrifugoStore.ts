@@ -64,6 +64,7 @@ type CentrifugoStore = {
   getMessages: () => Message[];
   setCurrentQuiz: (quizId: string) => void;
   setCurrentQuestion: (q: QuizQuestion) => void;
+  nextQuestion: () => void;
 };
 
 export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
@@ -268,6 +269,41 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
   setCurrentQuestion: (q) => {
     flushSync(() => {
       set({ currentQuestion: q });
+    });
+  },
+
+  nextQuestion: () => {
+    const { currentQuiz, quizzes, connection } = get();
+    if (!currentQuiz || !quizzes) {
+      console.warn("Quiz not found");
+      return;
+    }
+
+    const quiz = quizzes.find((q) => q.id === currentQuiz);
+    if (!quiz) {
+      console.warn("Quiz not found");
+      return;
+    }
+
+    const current = get().currentQuestion;
+    const currentIndex = quiz.questions.findIndex((q) => q.q === current?.q);
+    const next = quiz.questions[currentIndex + 1];
+
+    flushSync(() => {
+      if (next) {
+        set({ currentQuestion: next, usersAnswered: [] });
+
+        if (connection) {
+          const questionToSend = { q: next.q, a: next.a };
+          connection.centrifuge.publish(connection.channel, {
+            action: "NEXT_QUESTION",
+            data: questionToSend,
+          });
+        }
+      } else {
+        set({ currentQuestion: undefined });
+        console.log("Вопросов больше нет");
+      }
     });
   },
 }));

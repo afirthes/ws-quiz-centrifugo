@@ -8,6 +8,7 @@ export default function QuizQuestion() {
     const userId = useCentrifugoStore.getState().currentUser;
     const centrifuge = useCentrifugoStore.getState().connection?.centrifuge;
     const channel = useCentrifugoStore.getState().connection?.channel;
+    const nextQuestion = useCentrifugoStore(state => state.nextQuestion);
 
     const questionSent = useRef(false);
     useEffect(() => {
@@ -57,6 +58,11 @@ export default function QuizQuestion() {
             )}
 
             <main className="flex-grow flex flex-col items-center justify-center gap-10 p-4">
+                {!currentQuestion && (
+                    <div className="w-full max-w-xl bg-white shadow-md rounded p-6 text-center text-gray-700">
+                        <h2 className="text-xl font-semibold">Вопросов больше нет</h2>
+                    </div>
+                )}
                 {currentQuestion && (
                     <div className="w-full max-w-xl bg-white shadow-md rounded p-6 text-gray-900">
                         <h2 className="text-xl font-bold mb-4">{currentQuestion.q}</h2>
@@ -83,6 +89,14 @@ export default function QuizQuestion() {
                             </div>
                         )}
                     </div>
+                )}
+                {currentQuestion && (
+                    <button
+                        onClick={nextQuestion}
+                        className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
+                    >
+                        Следующий вопрос
+                    </button>
                 )}
             </main>
         </div>
