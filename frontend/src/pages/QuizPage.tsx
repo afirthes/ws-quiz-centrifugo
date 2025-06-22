@@ -20,9 +20,27 @@ export default function QuizPage() {
         currentQuizId && userId ? s.getStatus(currentQuizId) : undefined
     );
 
+    const connectedUsers = useCentrifugoStore((s) => s.connectedUsers[`quiz#${currentQuizId}`] || []);
+
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col relative">
             <Navbar userEmail="" />
+
+            {status && (
+                <div className="flex justify-end pr-6 pt-2 w-full">
+                        <span
+                            className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${
+                                status === "connected"
+                                    ? "bg-green-100 text-green-800"
+                                    : status === "connecting"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-red-100 text-red-800"
+                            }`}
+                        >
+                            {status}
+                        </span>
+                </div>
+            )}
 
             <main className="flex-grow flex flex-col items-center justify-center gap-10 p-4">
                 {currentQuizId && (
@@ -40,19 +58,14 @@ export default function QuizPage() {
                         </button>
                     </div>
                 )}
-                {status && (
-                    <div className="flex justify-end pr-6 pt-2 w-full">
-                        <span
-                            className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${
-                                status === "connected"
-                                    ? "bg-green-100 text-green-800"
-                                    : status === "connecting"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-red-100 text-red-800"
-                            }`}
-                        >
-                            {status}
-                        </span>
+                {currentQuizId && (
+                    <div className="mt-4">
+                        <h3 className="text-lg font-semibold mb-2">Подключённые пользователи:</h3>
+                        <ul className="space-y-1">
+                            {connectedUsers.map((user, index) => (
+                                <li key={index} className="text-gray-800">{user}</li>
+                            ))}
+                        </ul>
                     </div>
                 )}
             </main>
