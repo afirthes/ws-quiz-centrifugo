@@ -35,66 +35,60 @@ type ConnectionData = {
   status: Status;
   messages: Message[];
   channel: string;
-  userId: string;
-};
-
-type TokenInfo = {
-  connectionToken: string;
-  subscriptionToken: string;
-  channel: string;
-  userId: string;
 };
 
 type CentrifugoStore = {
-  connections: Record<string, ConnectionData>;
-  tokens: Record<string, TokenInfo>;
+  connection?: ConnectionData;
   currentQuestion?: QuizQuestion;
   usersAnswered: string[];
   currentQuiz?: string;
   currentUser?: string;
   connectedUsers: string[];
+  quizzes?: {
+    id: string;
+    name: string;
+    questions: { id: string; q: string; a: string[]; correct: number; score: number }[];
+  }[];
+  setQuizzes: (quizzes: {
+    id: string;
+    name: string;
+    questions: { id: string; q: string; a: string[]; correct: number; score: number }[];
+  }[]) => void;
   setCurrentUser: (userId: string) => void;
 
-  connect: (connectionId: string, userId: string, channel: string) => Promise<void>;
-  disconnect: (connectionId: string) => void;
-  sendMessage: (connectionId: string, message: Omit<Message, 'id'>) => void;
+  connect: (userId: string, channel: string) => Promise<void>;
+  disconnect: () => void;
+  sendMessage: (message: Omit<Message, 'id'>) => void;
 
-  getStatus: (connectionId: string) => Status | undefined;
-  getMessages: (connectionId: string) => Message[];
+  getStatus: () => Status | undefined;
+  getMessages: () => Message[];
   setCurrentQuiz: (quizId: string) => void;
+  setCurrentQuestion: (q: QuizQuestion) => void;
 };
 
 export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
-  connections: {},
-  tokens: {},
+  connection: undefined,
   usersAnswered: [],
   currentUser: undefined,
   connectedUsers: [],
+  quizzes: undefined,
 
-  connect: async (connectionId, userId, channel) => {
-    const { connections } = get();
+  setQuizzes: (quizzes) => {
+    flushSync(() => {
+      set({ quizzes });
+    });
+  },
 
-    if (connections[connectionId]) {
-      console.warn(`Connection ${connectionId} already exists`);
+  connect: async (userId, channel) => {
+    const { connection } = get();
+
+    if (connection) {
+      console.warn(`Connection already exists`);
       return;
     }
 
     const connectionToken = await generateConnectionToken(userId);
     const subscriptionToken = await generateSubscriptionToken(userId, channel);
-
-    flushSync(() => {
-      set((state) => ({
-        tokens: {
-          ...state.tokens,
-          [connectionId]: {
-            connectionToken,
-            subscriptionToken,
-            userId,
-            channel,
-          },
-        },
-      }));
-    });
 
     const centrifuge = new Centrifuge('ws://localhost:8000/connection/websocket', {
       token: connectionToken,
@@ -141,15 +135,12 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
         const message = ctx.data as Message;
         flushSync(() => {
           set((state) => {
-            const prev = state.connections[connectionId];
+            const prev = state.connection;
             if (!prev) return state;
             return {
-              connections: {
-                ...state.connections,
-                [connectionId]: {
-                  ...prev,
-                  messages: [...prev.messages, message],
-                },
+              connection: {
+                ...prev,
+                messages: [...prev.messages, message],
               },
             };
           });
@@ -160,15 +151,12 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
     centrifuge.on('connecting', () => {
       flushSync(() => {
         set((state) => {
-          const prev = state.connections[connectionId];
+          const prev = state.connection;
           if (!prev) return state;
           return {
-            connections: {
-              ...state.connections,
-              [connectionId]: {
-                ...prev,
-                status: 'connecting',
-              },
+            connection: {
+              ...prev,
+              status: 'connecting',
             },
           };
         });
@@ -178,15 +166,12 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
     centrifuge.on('connected', () => {
       flushSync(() => {
         set((state) => {
-          const prev = state.connections[connectionId];
+          const prev = state.connection;
           if (!prev) return state;
           return {
-            connections: {
-              ...state.connections,
-              [connectionId]: {
-                ...prev,
-                status: 'connected',
-              },
+            connection: {
+              ...prev,
+              status: 'connected',
             },
           };
         });
@@ -196,15 +181,12 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
     centrifuge.on('disconnected', () => {
       flushSync(() => {
         set((state) => {
-          const prev = state.connections[connectionId];
+          const prev = state.connection;
           if (!prev) return state;
           return {
-            connections: {
-              ...state.connections,
-              [connectionId]: {
-                ...prev,
-                status: 'disconnected',
-              },
+            connection: {
+              ...prev,
+              status: 'disconnected',
             },
           };
         });
@@ -223,41 +205,32 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
     });
 
     flushSync(() => {
-      set((state) => ({
-        connections: {
-          ...state.connections,
-          [connectionId]: {
-            centrifuge,
-            subscription: sub,
-            status: 'connecting',
-            messages: [],
-            channel,
-            userId,
-            // answers поле больше не используется внутри connections
-          },
+      set(() => ({
+        connection: {
+          centrifuge,
+          subscription: sub,
+          status: 'connecting',
+          messages: [],
+          channel,
         },
       }));
     });
   },
 
-  disconnect: (connectionId) => {
-    const conn = get().connections[connectionId];
+  disconnect: () => {
+    const conn = get().connection;
     if (!conn) return;
 
     conn.subscription.unsubscribe();
     conn.centrifuge.disconnect();
 
     flushSync(() => {
-      set((state) => {
-        const newConnections = { ...state.connections };
-        delete newConnections[connectionId];
-        return { connections: newConnections };
-      });
+      set(() => ({ connection: undefined }));
     });
   },
 
-  sendMessage: (connectionId, msg) => {
-    const conn = get().connections[connectionId];
+  sendMessage: (msg) => {
+    const conn = get().connection;
     if (!conn || conn.status !== 'connected') return;
 
     const fullMsg: Message = {
@@ -269,19 +242,16 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
 
     flushSync(() => {
       set((state) => ({
-        connections: {
-          ...state.connections,
-          [connectionId]: {
-            ...conn,
-            messages: [...conn.messages, fullMsg],
-          },
+        connection: {
+          ...conn,
+          messages: [...conn.messages, fullMsg],
         },
       }));
     });
   },
 
-  getStatus: (connectionId) => get().connections[connectionId]?.status,
-  getMessages: (connectionId) => get().connections[connectionId]?.messages ?? [],
+  getStatus: () => get().connection?.status,
+  getMessages: () => get().connection?.messages ?? [],
 
   setCurrentQuiz: (quizId) => {
     flushSync(() => {
@@ -292,6 +262,12 @@ export const useCentrifugoStore = create<CentrifugoStore>((set, get) => ({
   setCurrentUser: (userId) => {
     flushSync(() => {
       set({ currentUser: userId });
+    });
+  },
+
+  setCurrentQuestion: (q) => {
+    flushSync(() => {
+      set({ currentQuestion: q });
     });
   },
 }));

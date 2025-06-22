@@ -7,11 +7,15 @@ export default function QuizListPage() {
   const [quizzes, setQuizzes] = useState([]);
   const navigate = useNavigate();
   const setCurrentQuiz = useCentrifugoStore((s) => s.setCurrentQuiz);
+  const setQuizzesInStore = useCentrifugoStore((s) => s.setQuizzes);
 
   useEffect(() => {
     fetch("/api/quiz/list")
       .then((res) => res.json())
-      .then(setQuizzes)
+      .then((data) => {
+        setQuizzes(data);
+        setQuizzesInStore(data);
+      })
       .catch(console.error);
   }, []);
 

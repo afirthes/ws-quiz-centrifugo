@@ -8,12 +8,12 @@ export default function CentrifugoConnectPage() {
     const [userId, setUserId] = useState("");
     const [channel, setChannel] = useState("");
     const [connectionId, setConnectionId] = useState("");
-    const centrifuge = useCentrifugoStore.getState().connections[connectionId]?.centrifuge;
-    const channelName = useCentrifugoStore.getState().connections[connectionId]?.channel;
+    const centrifuge = useCentrifugoStore.getState().connection?.centrifuge;
+    const channelName = useCentrifugoStore.getState().connection?.channel;
 
     // ✅ Подписка напрямую на статус по connectionId
     const status = useCentrifugoStore((state) =>
-        connectionId ? state.connections[connectionId]?.status ?? "disconnected" : "disconnected"
+        connectionId ? state.connection?.status ?? "disconnected" : "disconnected"
     );
 
     const quizQuestion = useCentrifugoStore((s) => s.currentQuestion);
@@ -26,13 +26,13 @@ export default function CentrifugoConnectPage() {
         const id = `${userId}::${channel}`;
         setConnectionId(id);
 
-        await connect(id, userId, channel);
+        await connect(userId, channel);
     };
 
     const handleDisconnect = () => {
         if (!connectionId) return;
 
-        disconnect(connectionId);
+        disconnect();
         setConnectionId("");
     };
 
@@ -128,8 +128,6 @@ export default function CentrifugoConnectPage() {
                               key={index}
                               onClick={async () => {
                                 if (!connectionId) return;
-                                const centrifuge = useCentrifugoStore.getState().connections[connectionId]?.centrifuge;
-                                const channelName = useCentrifugoStore.getState().connections[connectionId]?.channel;
                                 if (!centrifuge || !channelName) return;
                                 await centrifuge.publish(channelName, {
                                   action: "ANSWER",
